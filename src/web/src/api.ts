@@ -1,0 +1,20 @@
+import type { SessionSummary } from './types'
+
+export type FetchSessionResult =
+  | { ok: true; data: SessionSummary }
+  | { ok: false }
+
+export async function fetchSession(sessionId: string): Promise<FetchSessionResult> {
+  const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`)
+
+  if (response.status === 404) {
+    return { ok: false }
+  }
+
+  if (!response.ok) {
+    throw new Error(`Unexpected response fetching session ${sessionId}: ${response.status}`)
+  }
+
+  const data = (await response.json()) as SessionSummary
+  return { ok: true, data }
+}

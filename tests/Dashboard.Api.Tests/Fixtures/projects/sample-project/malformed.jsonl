@@ -1,0 +1,5 @@
+{"type":"system","cwd":"/home/user/code/sample-project","sessionId":"malformed","timestamp":"2026-06-29T08:00:00.000Z","isSidechain":false}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"malformed","timestamp":"2026-06-29T08:01:00.000Z","isSidechain":false,"message":{"id":"bad_0001","model":"claude-opus-4-8","usage":{"input_tokens":1000,"output_tokens":400,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
+this is not json at all
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"malformed","timestamp":"2026-06-29T08:05:00.000Z","isSidechain":false,"message":{"id":"bad_0002","model":"claude-opus-4-8","usage":{"input_tokens":500,"output_tokens":
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"malformed","timestamp":"2026-06-29T08:10:00.000Z","isSidechain":false,"message":{"id":"bad_0003","model":"claude-opus-4-8","usage":{"input_tokens":200,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
