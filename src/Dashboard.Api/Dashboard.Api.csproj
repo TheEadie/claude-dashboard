@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dashboard.Api.Tests" />
+  </ItemGroup>
+
+  <!--
+    Builds the SPA into wwwroot so a fresh `dotnet run` serves the UI without
+    a separate manual step. Guarded on web/package.json existing so this
+    project can still build on its own (e.g. in environments that only
+    checked out the API) and so the test project's builds aren't slowed down
+    by an npm build on every compile.
+  -->
+  <Target Name="BuildSpa" BeforeTargets="Build;Publish" Condition="Exists('../web/package.json')">
+    <Exec Command="npm ci" WorkingDirectory="../web" />
+    <Exec Command="npm run build" WorkingDirectory="../web" />
+  </Target>
+
+</Project>
