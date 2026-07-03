@@ -34,7 +34,7 @@ internal static class SessionAnalyzer
         // block per group, or totals inflate several-fold (verified against
         // real transcripts — see plan §1.4).
         var turns = mainLine
-            .Where(l => l.Type == "assistant" && l.Message?.Id is not null)
+            .Where(l => l.Type == "assistant" && l.Message is { Id: not null })
             .GroupBy(l => l.Message!.Id)
             .Select(g => g.First().Message!)
             // "<synthetic>" turns are Claude Code placeholders with zero

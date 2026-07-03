@@ -12,7 +12,7 @@ public class PriceTableTests
         var price = table.TryGet("claude-opus-4-8");
 
         Assert.NotNull(price);
-        Assert.Equal(5.00m, price!.Input);
+        Assert.Equal(5.00m, price.Input);
         Assert.Equal(25.00m, price.Output);
         Assert.Equal(6.25m, price.CacheWrite);
         Assert.Equal(0.50m, price.CacheRead);

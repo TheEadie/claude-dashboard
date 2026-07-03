@@ -42,7 +42,7 @@ public class SessionAnalyzerTests
         Assert.Equal(DateTimeOffset.Parse("2026-06-26T14:30:50.111Z"), summary.StartedAt);
         Assert.Equal(DateTimeOffset.Parse("2026-06-26T14:40:12.345Z"), summary.EndedAt);
         Assert.Equal(562234, summary.DurationMs);
-        Assert.Equal(new[] { "claude-opus-4-8" }, summary.Models);
+        Assert.Equal(["claude-opus-4-8"], summary.Models);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class SessionAnalyzerTests
 
         var summary = SessionAnalyzer.Analyze("multi-model", lines, prices);
 
-        Assert.Equal(new[] { "claude-opus-4-8", "claude-sonnet-4-6" }, summary.Models);
+        Assert.Equal(["claude-opus-4-8", "claude-sonnet-4-6"], summary.Models);
         Assert.Empty(summary.UnpricedModels);
         // opus turns: (1000*5 + 400*25)/1e6 + (300*5 + 150*25)/1e6 = 0.015 + 0.00525
         // sonnet turn: (2000*3 + 900*15 + 100*3.75 + 50*0.30)/1e6 = 0.019890... wait computed below
@@ -88,6 +88,6 @@ public class SessionAnalyzerTests
         // be excluded even though it carries a real model and non-zero usage.
         Assert.Equal(1000, summary.Tokens.Input);
         Assert.Equal(400, summary.Tokens.Output);
-        Assert.Equal(new[] { "claude-opus-4-8" }, summary.Models);
+        Assert.Equal(["claude-opus-4-8"], summary.Models);
     }
 }

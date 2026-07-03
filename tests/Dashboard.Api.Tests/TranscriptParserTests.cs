@@ -31,7 +31,7 @@ public class TranscriptParserTests
         // interleaved that must be skipped without throwing.
         Assert.Equal(3, lines.Count);
         Assert.Equal(
-            new[] { "bad_0001", "bad_0003" },
+            ["bad_0001", "bad_0003"],
             lines.Where(l => l.Type == "assistant").Select(l => l.Message!.Id));
     }
 }

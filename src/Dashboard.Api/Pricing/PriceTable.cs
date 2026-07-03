@@ -14,13 +14,13 @@ internal sealed class PriceTable : IPriceTable
 {
     private static readonly IReadOnlyDictionary<string, ModelPrice> Rates = new Dictionary<string, ModelPrice>
     {
-        ["claude-opus-4-8"] = new ModelPrice(5.00m, 25.00m, 6.25m, 0.50m),
-        ["claude-opus-4-7"] = new ModelPrice(5.00m, 25.00m, 6.25m, 0.50m),
-        ["claude-opus-4-6"] = new ModelPrice(5.00m, 25.00m, 6.25m, 0.50m),
-        ["claude-sonnet-5"] = new ModelPrice(3.00m, 15.00m, 3.75m, 0.30m),
-        ["claude-sonnet-4-6"] = new ModelPrice(3.00m, 15.00m, 3.75m, 0.30m),
-        ["claude-fable-5"] = new ModelPrice(10.00m, 50.00m, 12.50m, 1.00m),
-        ["claude-haiku-4-5"] = new ModelPrice(1.00m, 5.00m, 1.25m, 0.10m),
+        ["claude-opus-4-8"] = new(5.00m, 25.00m, 6.25m, 0.50m),
+        ["claude-opus-4-7"] = new(5.00m, 25.00m, 6.25m, 0.50m),
+        ["claude-opus-4-6"] = new(5.00m, 25.00m, 6.25m, 0.50m),
+        ["claude-sonnet-5"] = new(3.00m, 15.00m, 3.75m, 0.30m),
+        ["claude-sonnet-4-6"] = new(3.00m, 15.00m, 3.75m, 0.30m),
+        ["claude-fable-5"] = new(10.00m, 50.00m, 12.50m, 1.00m),
+        ["claude-haiku-4-5"] = new(1.00m, 5.00m, 1.25m, 0.10m),
     };
 
     public ModelPrice? TryGet(string model) => Rates.GetValueOrDefault(model);
