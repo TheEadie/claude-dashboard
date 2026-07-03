@@ -1,0 +1,2 @@
+{"type":"system","cwd":"/home/user/code/sample-project","sessionId":"agent-1","timestamp":"2026-06-26T15:00:00.000Z","isSidechain":false}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"agent-1","timestamp":"2026-06-26T15:01:00.000Z","isSidechain":false,"message":{"id":"a1_0001","model":"claude-opus-4-8","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
