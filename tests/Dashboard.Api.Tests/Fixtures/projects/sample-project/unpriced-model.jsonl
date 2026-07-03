@@ -1,0 +1,3 @@
+{"type":"system","cwd":"/home/user/code/sample-project","sessionId":"unpriced-model","timestamp":"2026-06-28T10:00:00.000Z","isSidechain":false}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"unpriced-model","timestamp":"2026-06-28T10:01:00.000Z","isSidechain":false,"message":{"id":"um_0001","model":"claude-opus-4-8","usage":{"input_tokens":1000,"output_tokens":400,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"unpriced-model","timestamp":"2026-06-28T10:05:00.000Z","isSidechain":false,"message":{"id":"um_0002","model":"claude-experimental-x","usage":{"input_tokens":500,"output_tokens":250,"cache_creation_input_tokens":10,"cache_read_input_tokens":5}}}
