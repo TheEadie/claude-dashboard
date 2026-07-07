@@ -72,7 +72,7 @@ export default function SessionListPage() {
     )
   }
 
-  const hasUnpriced = items.some((item) => (item.summary?.unpricedModels.length ?? 0) > 0)
+  const hasUnpriced = items.some((item) => (item.combined?.unpricedModels.length ?? 0) > 0)
 
   return (
     <Box p={4}>
@@ -99,18 +99,18 @@ export default function SessionListPage() {
                 sx={{ cursor: 'pointer' }}
                 onClick={() => navigate(`/session/${item.sessionId}`)}
               >
-                {!item.failed && item.summary ? (
+                {!item.failed && item.summary && item.combined ? (
                   <>
                     <TableCell>
                       {item.summary.startedAt ? new Date(item.summary.startedAt).toLocaleString() : ''}
                     </TableCell>
                     <TableCell>{item.summary.title}</TableCell>
                     <TableCell>{item.summary.project}</TableCell>
-                    <TableCell>{item.summary.models.join(', ')}</TableCell>
-                    <TableCell>{item.summary.tokens.total.toLocaleString()}</TableCell>
+                    <TableCell>{item.combined.models.join(', ')}</TableCell>
+                    <TableCell>{item.combined.tokens.total.toLocaleString()}</TableCell>
                     <TableCell>
-                      {formatUsd2(item.summary.costUsd)}
-                      {item.summary.unpricedModels.length > 0 && (
+                      {formatUsd2(item.combined.costUsd)}
+                      {item.combined.unpricedModels.length > 0 && (
                         <Typography
                           component="span"
                           color="warning.main"

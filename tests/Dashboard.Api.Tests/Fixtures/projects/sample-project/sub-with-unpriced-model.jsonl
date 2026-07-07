@@ -1,0 +1,3 @@
+{"type":"system","cwd":"/home/user/code/sample-project","sessionId":"sub-with-unpriced-model","timestamp":"2026-07-02T09:00:00.000Z","isSidechain":false}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"sub-with-unpriced-model","timestamp":"2026-07-02T09:00:05.000Z","isSidechain":false,"message":{"id":"swu_0001","model":"claude-opus-4-8","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
+{"type":"ai-title","aiTitle":"Parent with unpriced sub-agent","sessionId":"sub-with-unpriced-model"}

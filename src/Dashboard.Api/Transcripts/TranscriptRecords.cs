@@ -28,3 +28,11 @@ internal sealed record Usage(
     [property: JsonPropertyName("output_tokens")] long OutputTokens,
     [property: JsonPropertyName("cache_creation_input_tokens")] long CacheCreationInputTokens,
     [property: JsonPropertyName("cache_read_input_tokens")] long CacheReadInputTokens);
+
+/// <summary>
+/// A sub-agent's agent-*.meta.json sidecar. Only AgentType (the span's role)
+/// is consumed; description is out of scope (the panel shows aggregate stats
+/// only, not sub-agent message content).
+/// </summary>
+internal sealed record SubAgentMeta(
+    [property: JsonPropertyName("agentType")] string? AgentType);

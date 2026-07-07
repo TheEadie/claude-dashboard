@@ -41,4 +41,22 @@ internal sealed class TranscriptParser : ITranscriptParser
 
         return result;
     }
+
+    public SubAgentMeta? ParseMeta(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<SubAgentMeta>(json, Options);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
 }

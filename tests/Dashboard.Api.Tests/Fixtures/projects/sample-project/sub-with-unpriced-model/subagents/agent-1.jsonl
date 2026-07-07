@@ -1,0 +1,2 @@
+{"type":"system","cwd":"/home/user/code/sample-project","sessionId":"agent-1","timestamp":"2026-07-02T09:01:00.000Z","isSidechain":true}
+{"type":"assistant","cwd":"/home/user/code/sample-project","sessionId":"agent-1","timestamp":"2026-07-02T09:01:05.000Z","isSidechain":true,"message":{"id":"agent1_0001","model":"claude-experimental-x","usage":{"input_tokens":300,"output_tokens":150,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}

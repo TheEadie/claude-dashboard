@@ -26,12 +26,48 @@ public sealed record TokenBreakdown(
 
 /// <summary>
 /// One row of GET /api/sessions. Successful rows carry the full SessionSummary
-/// (same shape as the detail endpoint); failed rows carry only the session id
-/// and a best-effort project name with Failed = true and Summary = null.
+/// (same shape as the detail endpoint) and the session's Combined totals
+/// (main + sub-agents); failed rows carry only the session id and a
+/// best-effort project name with Failed = true, Summary = null, Combined = null.
 /// Keep field names in lockstep with the SPA's src/types.ts.
 /// </summary>
 public sealed record SessionListItem(
     string SessionId,
     string Project,
     bool Failed,
-    SessionSummary? Summary);
+    SessionSummary? Summary,
+    CombinedTotals? Combined);
+
+/// <summary>
+/// One sub-agent span in a session trace. Failed spans carry only AgentId,
+/// Role and Failed = true (no stats, no timestamps); undated-but-readable
+/// spans carry stats with null timestamps.
+/// </summary>
+public sealed record SubAgentSpan(
+    string AgentId,
+    string Role,
+    bool Failed,
+    DateTimeOffset? StartedAt,
+    DateTimeOffset? EndedAt,
+    long DurationMs,
+    IReadOnlyList<string> Models,
+    IReadOnlyList<string> UnpricedModels,
+    TokenBreakdown? Tokens,
+    decimal? CostUsd);
+
+/// <summary>
+/// Combined total = main session + every successfully-analyzed sub-agent.
+/// </summary>
+public sealed record CombinedTotals(
+    decimal CostUsd,
+    TokenBreakdown Tokens,
+    IReadOnlyList<string> Models,
+    IReadOnlyList<string> UnpricedModels);
+
+/// <summary>
+/// Response shape for GET /api/sessions/{sessionId}.
+/// </summary>
+public sealed record SessionTrace(
+    SessionSummary Session,
+    IReadOnlyList<SubAgentSpan> SubAgents,
+    CombinedTotals Combined);

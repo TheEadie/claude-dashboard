@@ -18,10 +18,10 @@ app.MapGet("/api/sessions", (ISessionService sessionService) =>
 
 app.MapGet("/api/sessions/{sessionId}", (string sessionId, ISessionService sessionService) =>
 {
-    var summary = sessionService.GetSession(sessionId);
-    return summary is null
+    var trace = sessionService.GetTrace(sessionId);
+    return trace is null
         ? Results.NotFound(new { error = "no session with that id was found", sessionId })
-        : Results.Ok(summary);
+        : Results.Ok(trace);
 });
 
 app.MapFallbackToFile("index.html");

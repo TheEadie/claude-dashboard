@@ -68,4 +68,31 @@ internal sealed class TranscriptLocator(IConfiguration configuration) : ITranscr
 
         return result;
     }
+
+    public IReadOnlyList<DiscoveredSubAgent> DiscoverSubAgents(string sessionFilePath)
+    {
+        // Not user input: sessionFilePath is always a path already returned by
+        // Locate/DiscoverSessions, so no path-traversal guard is needed here.
+        var subagentsDir = Path.Combine(
+            Path.GetDirectoryName(sessionFilePath)!,
+            Path.GetFileNameWithoutExtension(sessionFilePath),
+            "subagents");
+
+        if (!Directory.Exists(subagentsDir))
+        {
+            return Array.Empty<DiscoveredSubAgent>();
+        }
+
+        var result = new List<DiscoveredSubAgent>();
+
+        foreach (var transcriptPath in Directory.EnumerateFiles(subagentsDir, "agent-*.jsonl", SearchOption.TopDirectoryOnly))
+        {
+            var agentId = Path.GetFileNameWithoutExtension(transcriptPath);
+            var metaCandidate = transcriptPath[..^".jsonl".Length] + ".meta.json";
+            var metaPath = File.Exists(metaCandidate) ? metaCandidate : null;
+            result.Add(new DiscoveredSubAgent(agentId, transcriptPath, metaPath));
+        }
+
+        return result.OrderBy(a => a.AgentId, StringComparer.Ordinal).ToList();
+    }
 }
