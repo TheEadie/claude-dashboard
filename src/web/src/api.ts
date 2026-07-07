@@ -1,7 +1,7 @@
-import type { SessionListItem, SessionSummary } from './types'
+import type { SessionListItem, SessionTrace } from './types'
 
 export type FetchSessionResult =
-  | { ok: true; data: SessionSummary }
+  | { ok: true; data: SessionTrace }
   | { ok: false }
 
 export async function fetchSession(sessionId: string): Promise<FetchSessionResult> {
@@ -15,7 +15,7 @@ export async function fetchSession(sessionId: string): Promise<FetchSessionResul
     throw new Error(`Unexpected response fetching session ${sessionId}: ${response.status}`)
   }
 
-  const data = (await response.json()) as SessionSummary
+  const data = (await response.json()) as SessionTrace
   return { ok: true, data }
 }
 

@@ -22,9 +22,36 @@ export interface SessionSummary {
   costUsd: number
 }
 
+export interface SubAgentSpan {
+  agentId: string
+  role: string
+  failed: boolean
+  startedAt: string | null
+  endedAt: string | null
+  durationMs: number
+  models: string[]
+  unpricedModels: string[]
+  tokens: TokenBreakdown | null
+  costUsd: number | null
+}
+
+export interface CombinedTotals {
+  costUsd: number
+  tokens: TokenBreakdown
+  models: string[]
+  unpricedModels: string[]
+}
+
+export interface SessionTrace {
+  session: SessionSummary
+  subAgents: SubAgentSpan[]
+  combined: CombinedTotals
+}
+
 export interface SessionListItem {
   sessionId: string
   project: string
   failed: boolean
   summary: SessionSummary | null
+  combined: CombinedTotals | null
 }
