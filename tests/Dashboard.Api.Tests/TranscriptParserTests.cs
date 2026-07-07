@@ -34,4 +34,34 @@ public class TranscriptParserTests
             ["bad_0001", "bad_0003"],
             lines.Where(l => l.Type == "assistant").Select(l => l.Message!.Id));
     }
+
+    [Fact]
+    public void ParseMeta_KnownMetaFile_ReturnsAgentType()
+    {
+        var parser = new TranscriptParser();
+        var path = Path.Combine(
+            AppContext.BaseDirectory, "Fixtures", "projects", "sample-project",
+            "sub-parent", "subagents", "agent-1.meta.json");
+
+        var meta = parser.ParseMeta(path);
+
+        Assert.NotNull(meta);
+        Assert.Equal("code-reviewer", meta.AgentType);
+    }
+
+    [Fact]
+    public void ParseMeta_NullPath_ReturnsNull()
+    {
+        var parser = new TranscriptParser();
+
+        Assert.Null(parser.ParseMeta(null));
+    }
+
+    [Fact]
+    public void ParseMeta_NonexistentPath_ReturnsNull()
+    {
+        var parser = new TranscriptParser();
+
+        Assert.Null(parser.ParseMeta(FixturePath("does-not-exist.meta.json")));
+    }
 }

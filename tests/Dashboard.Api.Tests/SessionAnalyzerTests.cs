@@ -1,3 +1,4 @@
+using Dashboard.Api.Models;
 using Dashboard.Api.Pricing;
 using Dashboard.Api.Sessions;
 using Dashboard.Api.Transcripts;
@@ -89,5 +90,79 @@ public class SessionAnalyzerTests
         Assert.Equal(1000, summary.Tokens.Input);
         Assert.Equal(400, summary.Tokens.Output);
         Assert.Equal(["claude-opus-4-8"], summary.Models);
+    }
+
+    [Fact]
+    public void AnalyzeSubAgent_SidechainLines_AreIncludedNotExcluded()
+    {
+        // Contrast with Analyze: a sub-agent's own transcript is entirely
+        // sidechain records, so AnalyzeSubAgent must NOT filter them out.
+        var lines = new List<TranscriptLine>
+        {
+            new("assistant", "/home/user/code/sample-project", "agent-1",
+                DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), true, null,
+                new AssistantMessage("a1_0001", "claude-opus-4-8",
+                    new Usage(100, 50, 0, 0))),
+        };
+        var prices = new PriceTable();
+
+        var span = SessionAnalyzer.AnalyzeSubAgent("agent-1", "code-reviewer", lines, prices);
+
+        Assert.Equal("agent-1", span.AgentId);
+        Assert.Equal("code-reviewer", span.Role);
+        Assert.False(span.Failed);
+        Assert.Equal(100, span.Tokens!.Input);
+        Assert.Equal(50, span.Tokens.Output);
+        Assert.Equal(["claude-opus-4-8"], span.Models);
+        Assert.Equal((100m * 5.00m + 50m * 25.00m) / 1_000_000m, span.CostUsd);
+        Assert.Equal(DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), span.StartedAt);
+        Assert.Equal(DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), span.EndedAt);
+    }
+
+    [Fact]
+    public void Combine_MainPlusTwoReadableSubAgents_SumsAllCategoriesAndUnionsModels()
+    {
+        var main = SessionAnalyzer.Analyze("main", ParseFixture("valid-single-model.jsonl"), new PriceTable());
+        var sub1 = new SubAgentSpan(
+            "agent-1", "code-reviewer", false,
+            DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), 0,
+            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m);
+        var sub2 = new SubAgentSpan(
+            "agent-2", "agent-2", false,
+            DateTimeOffset.Parse("2026-07-01T09:02:00.000Z"), DateTimeOffset.Parse("2026-07-01T09:02:00.000Z"), 0,
+            ["claude-sonnet-4-6"], [], new TokenBreakdown(200, 100, 0, 0, 300), 0.0021m);
+
+        var combined = SessionAnalyzer.Combine(main, [sub1, sub2]);
+
+        Assert.Equal(main.Tokens.Total + 150 + 300, combined.Tokens.Total);
+        Assert.Equal(main.CostUsd + 0.00175m + 0.0021m, combined.CostUsd);
+        Assert.Contains("claude-opus-4-8", combined.Models);
+        Assert.Contains("claude-sonnet-4-6", combined.Models);
+    }
+
+    [Fact]
+    public void Combine_FailedSubAgentWithNullTokens_ContributesNothing()
+    {
+        var main = SessionAnalyzer.Analyze("main", ParseFixture("valid-single-model.jsonl"), new PriceTable());
+        var failed = new SubAgentSpan("agent-1", "agent-1", true, null, null, 0, [], [], null, null);
+
+        var combined = SessionAnalyzer.Combine(main, [failed]);
+
+        Assert.Equal(main.Tokens.Total, combined.Tokens.Total);
+        Assert.Equal(main.CostUsd, combined.CostUsd);
+    }
+
+    [Fact]
+    public void Combine_UndatedButReadableSubAgent_IsIncludedInCombinedTotal()
+    {
+        var main = SessionAnalyzer.Analyze("main", ParseFixture("valid-single-model.jsonl"), new PriceTable());
+        var undated = new SubAgentSpan(
+            "agent-1", "agent-1", false, null, null, 0,
+            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m);
+
+        var combined = SessionAnalyzer.Combine(main, [undated]);
+
+        Assert.Equal(main.Tokens.Total + 150, combined.Tokens.Total);
+        Assert.Equal(main.CostUsd + 0.00175m, combined.CostUsd);
     }
 }

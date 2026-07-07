@@ -29,9 +29,88 @@ public class SessionsEndpointTests : IClassFixture<WebApplicationFactory<Program
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("valid-single-model", body.GetProperty("sessionId").GetString());
-        Assert.Equal("sample-project", body.GetProperty("project").GetString());
-        Assert.Equal(5600, body.GetProperty("tokens").GetProperty("total").GetInt64());
+        var session = body.GetProperty("session");
+        Assert.Equal("valid-single-model", session.GetProperty("sessionId").GetString());
+        Assert.Equal("sample-project", session.GetProperty("project").GetString());
+        Assert.Equal(5600, session.GetProperty("tokens").GetProperty("total").GetInt64());
+        Assert.Empty(body.GetProperty("subAgents").EnumerateArray());
+        Assert.Equal(5600, body.GetProperty("combined").GetProperty("tokens").GetProperty("total").GetInt64());
+    }
+
+    [Fact]
+    public async Task GetSession_SessionWithSubAgents_ReturnsSubAgentsAndCombinedTotals()
+    {
+        var response = await _client.GetAsync("/api/sessions/sub-parent");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var session = body.GetProperty("session");
+        Assert.Equal("sub-parent", session.GetProperty("sessionId").GetString());
+
+        var subAgents = body.GetProperty("subAgents").EnumerateArray().ToList();
+        Assert.Equal(2, subAgents.Count);
+        var roles = subAgents.Select(s => s.GetProperty("role").GetString()).ToList();
+        Assert.Contains("code-reviewer", roles);
+        Assert.Contains("agent-2", roles);
+
+        var agent1 = subAgents.Single(s => s.GetProperty("agentId").GetString() == "agent-1");
+        var models = agent1.GetProperty("models").EnumerateArray().Select(m => m.GetString()).ToList();
+        Assert.Equal(["claude-opus-4-8"], models);
+        Assert.Equal(150, agent1.GetProperty("tokens").GetProperty("total").GetInt64());
+
+        var combined = body.GetProperty("combined");
+        Assert.Equal(1950, combined.GetProperty("tokens").GetProperty("total").GetInt64());
+        var combinedModels = combined.GetProperty("models").EnumerateArray().Select(m => m.GetString()).ToList();
+        Assert.Contains("claude-opus-4-8", combinedModels);
+        Assert.Contains("claude-sonnet-4-6", combinedModels);
+    }
+
+    [Fact]
+    public async Task GetSession_SubAgentUsesUnpricedModel_CombinedUnpricedModelsIncludesIt()
+    {
+        var response = await _client.GetAsync("/api/sessions/sub-with-unpriced-model");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // The main session itself uses only a priced model.
+        var session = body.GetProperty("session");
+        Assert.Empty(session.GetProperty("unpricedModels").EnumerateArray());
+
+        // The sub-agent alone contributes the unpriced model.
+        var subAgent = Assert.Single(body.GetProperty("subAgents").EnumerateArray());
+        var subAgentUnpriced = subAgent.GetProperty("unpricedModels").EnumerateArray()
+            .Select(m => m.GetString()).ToList();
+        Assert.Equal(["claude-experimental-x"], subAgentUnpriced);
+        Assert.Equal(5000, subAgent.GetProperty("durationMs").GetInt64());
+
+        // Combined must union in the sub-agent's unpriced model even though the
+        // main session has none of its own — this is what drives the session's
+        // understated-cost marker (SPA derives it from Combined.UnpricedModels).
+        var combinedUnpriced = body.GetProperty("combined").GetProperty("unpricedModels").EnumerateArray()
+            .Select(m => m.GetString()).ToList();
+        Assert.Contains("claude-experimental-x", combinedUnpriced);
+    }
+
+    [Fact]
+    public async Task GetSessions_SubAgentUsesUnpricedModel_RowCombinedUnpricedModelsIncludesIt()
+    {
+        var response = await _client.GetAsync("/api/sessions");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var row = body.EnumerateArray()
+            .Single(e => e.GetProperty("sessionId").GetString() == "sub-with-unpriced-model");
+
+        // The row's own summary has no unpriced models — only the sub-agent does.
+        var summaryUnpriced = row.GetProperty("summary").GetProperty("unpricedModels").EnumerateArray()
+            .Select(m => m.GetString()).ToList();
+        Assert.Empty(summaryUnpriced);
+
+        // The row's Combined must surface the sub-agent's unpriced model, which is
+        // what the session-list understated-cost marker keys off.
+        var combinedUnpriced = row.GetProperty("combined").GetProperty("unpricedModels").EnumerateArray()
+            .Select(m => m.GetString()).ToList();
+        Assert.Contains("claude-experimental-x", combinedUnpriced);
     }
 
     [Fact]
@@ -60,7 +139,25 @@ public class SessionsEndpointTests : IClassFixture<WebApplicationFactory<Program
         Assert.Contains("malformed", ids);
         Assert.Contains("synthetic-and-sidechain", ids);
         Assert.Contains("second-project-session", ids);
+        Assert.Contains("sub-parent", ids);
         Assert.DoesNotContain("agent-1", ids);
+    }
+
+    [Fact]
+    public async Task GetSessions_SessionWithSubAgents_RowHasCombinedTotalsAndSummary()
+    {
+        var response = await _client.GetAsync("/api/sessions");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var subParent = body.EnumerateArray()
+            .Single(e => e.GetProperty("sessionId").GetString() == "sub-parent");
+
+        Assert.NotEqual(JsonValueKind.Null, subParent.GetProperty("summary").ValueKind);
+        var combined = subParent.GetProperty("combined");
+        Assert.Equal(1950, combined.GetProperty("tokens").GetProperty("total").GetInt64());
+        var combinedModels = combined.GetProperty("models").EnumerateArray().Select(m => m.GetString()).ToList();
+        Assert.Contains("claude-opus-4-8", combinedModels);
+        Assert.Contains("claude-sonnet-4-6", combinedModels);
     }
 
     [Fact]

@@ -89,4 +89,36 @@ public class TranscriptLocatorTests
 
         Assert.Empty(discovered);
     }
+
+    [Fact]
+    public void DiscoverSubAgents_SessionWithSubAgents_ReturnsOrderedEntriesWithMetaPaths()
+    {
+        var locator = CreateLocator();
+        var sessionPath = locator.Locate("sub-parent");
+
+        var discovered = locator.DiscoverSubAgents(sessionPath!);
+
+        Assert.Equal(2, discovered.Count);
+        Assert.Equal(["agent-1", "agent-2"], discovered.Select(d => d.AgentId));
+
+        var agent1 = discovered.Single(d => d.AgentId == "agent-1");
+        Assert.NotNull(agent1.MetaPath);
+        Assert.True(File.Exists(agent1.MetaPath));
+        Assert.True(File.Exists(agent1.TranscriptPath));
+
+        var agent2 = discovered.Single(d => d.AgentId == "agent-2");
+        Assert.Null(agent2.MetaPath);
+        Assert.True(File.Exists(agent2.TranscriptPath));
+    }
+
+    [Fact]
+    public void DiscoverSubAgents_SessionWithoutSubAgentsDir_ReturnsEmpty()
+    {
+        var locator = CreateLocator();
+        var sessionPath = locator.Locate("valid-single-model");
+
+        var discovered = locator.DiscoverSubAgents(sessionPath!);
+
+        Assert.Empty(discovered);
+    }
 }
