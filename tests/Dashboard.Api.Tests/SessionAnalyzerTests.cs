@@ -47,6 +47,37 @@ public class SessionAnalyzerTests
     }
 
     [Fact]
+    public void Analyze_MultipleAiTitles_UsesFirstNotLast()
+    {
+        // Claude Code rewrites the ai-title as a conversation's topic drifts;
+        // the title should reflect the session's original intent (first title),
+        // not whatever the last operation happened to be.
+        var lines = new List<TranscriptLine>
+        {
+            new("ai-title", "/home/user/code/sample-project", "s", null, false, "Original intent", null),
+            new("ai-title", "/home/user/code/sample-project", "s", null, false, "Last operation", null),
+        };
+
+        var summary = SessionAnalyzer.Analyze("s", lines, new PriceTable());
+
+        Assert.Equal("Original intent", summary.Title);
+    }
+
+    [Fact]
+    public void Analyze_NoAiTitle_FallsBackToSessionId()
+    {
+        var lines = new List<TranscriptLine>
+        {
+            new("assistant", "/home/user/code/sample-project", "s", null, false, null,
+                new AssistantMessage("m1", "claude-opus-4-8", new Usage(100, 50, 0, 0))),
+        };
+
+        var summary = SessionAnalyzer.Analyze("fallback-id", lines, new PriceTable());
+
+        Assert.Equal("fallback-id", summary.Title);
+    }
+
+    [Fact]
     public void Analyze_MultiModelSession_PricesEachTurnByItsOwnModel()
     {
         var lines = ParseFixture("multi-model.jsonl");

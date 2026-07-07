@@ -22,7 +22,9 @@ internal static class SessionAnalyzer
             .FirstOrDefault(cwd => !string.IsNullOrEmpty(cwd));
         project = string.IsNullOrEmpty(project) ? string.Empty : Path.GetFileName(project.TrimEnd('/'));
 
-        var title = mainLine.Select(l => l.AiTitle).LastOrDefault(t => !string.IsNullOrEmpty(t)) ?? sessionId;
+        // Use the first AI title so the session name reflects its original
+        // intent rather than whatever the last operation happened to be.
+        var title = mainLine.Select(l => l.AiTitle).FirstOrDefault(t => !string.IsNullOrEmpty(t)) ?? sessionId;
 
         var (tokens, models, unpricedModels, costUsd) = Aggregate(mainLine, prices);
         var (startedAt, endedAt, durationMs) = TimeRange(mainLine);
