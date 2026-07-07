@@ -5,10 +5,10 @@ namespace Dashboard.Api.Sessions;
 internal interface ISessionService
 {
     /// <summary>
-    /// Locates, parses, and analyzes the given session. Returns null when no
-    /// transcript exists for the session id (drives the 404 response).
+    /// Locates, parses, and analyzes the given session and its sub-agents. Returns
+    /// null when no main transcript exists / is readable (drives the 404).
     /// </summary>
-    SessionSummary? GetSession(string sessionId);
+    SessionTrace? GetTrace(string sessionId);
 
     /// <summary>
     /// Discovers, parses, and analyzes every top-level session transcript and
