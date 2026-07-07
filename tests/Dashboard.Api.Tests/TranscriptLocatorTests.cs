@@ -51,4 +51,42 @@ public class TranscriptLocatorTests
 
         Assert.Null(path);
     }
+
+    [Fact]
+    public void DiscoverSessions_ReturnsTopLevelSessionsExcludingSubagents()
+    {
+        var locator = CreateLocator();
+
+        var discovered = locator.DiscoverSessions();
+        var ids = discovered.Select(d => d.SessionId).ToList();
+
+        Assert.Contains("valid-single-model", ids);
+        Assert.Contains("multi-model", ids);
+        Assert.Contains("second-project-session", ids);
+        Assert.DoesNotContain("agent-1", ids);
+
+        foreach (var d in discovered)
+        {
+            Assert.EndsWith(".jsonl", d.FilePath);
+            Assert.True(File.Exists(d.FilePath));
+        }
+    }
+
+    [Fact]
+    public void DiscoverSessions_MissingProjectsDir_ReturnsEmpty()
+    {
+        var emptyRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(emptyRoot);
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ClaudeDashboard:ClaudeRoot"] = emptyRoot,
+            })
+            .Build();
+        var locator = new TranscriptLocator(config);
+
+        var discovered = locator.DiscoverSessions();
+
+        Assert.Empty(discovered);
+    }
 }

@@ -23,3 +23,15 @@ public sealed record TokenBreakdown(
     long CacheWrite,
     long CacheRead,
     long Total);
+
+/// <summary>
+/// One row of GET /api/sessions. Successful rows carry the full SessionSummary
+/// (same shape as the detail endpoint); failed rows carry only the session id
+/// and a best-effort project name with Failed = true and Summary = null.
+/// Keep field names in lockstep with the SPA's src/types.ts.
+/// </summary>
+public sealed record SessionListItem(
+    string SessionId,
+    string Project,
+    bool Failed,
+    SessionSummary? Summary);

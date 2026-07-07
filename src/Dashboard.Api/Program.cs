@@ -13,6 +13,9 @@ var app = builder.Build();
 
 app.UseStaticFiles();
 
+app.MapGet("/api/sessions", (ISessionService sessionService) =>
+    Results.Ok(sessionService.GetAllSessions()));
+
 app.MapGet("/api/sessions/{sessionId}", (string sessionId, ISessionService sessionService) =>
 {
     var summary = sessionService.GetSession(sessionId);

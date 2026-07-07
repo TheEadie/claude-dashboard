@@ -21,3 +21,10 @@ export interface SessionSummary {
   tokens: TokenBreakdown
   costUsd: number
 }
+
+export interface SessionListItem {
+  sessionId: string
+  project: string
+  failed: boolean
+  summary: SessionSummary | null
+}
