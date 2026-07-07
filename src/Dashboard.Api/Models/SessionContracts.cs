@@ -39,9 +39,17 @@ public sealed record SessionListItem(
     CombinedTotals? Combined);
 
 /// <summary>
+/// One assistant turn's context-window occupancy: input + cache-read +
+/// cache-write tokens for that turn, and the model that produced it (may be
+/// null when the turn carried no model). The window size / percentage is a
+/// display concern computed by the SPA from a bundled per-model table.
+/// </summary>
+public sealed record ContextWindowTurn(long Tokens, string? Model);
+
+/// <summary>
 /// One sub-agent span in a session trace. Failed spans carry only AgentId,
-/// Role and Failed = true (no stats, no timestamps); undated-but-readable
-/// spans carry stats with null timestamps.
+/// Role and Failed = true (no stats, no timestamps, empty ContextWindow);
+/// undated-but-readable spans carry stats with null timestamps.
 /// </summary>
 public sealed record SubAgentSpan(
     string AgentId,
@@ -53,7 +61,8 @@ public sealed record SubAgentSpan(
     IReadOnlyList<string> Models,
     IReadOnlyList<string> UnpricedModels,
     TokenBreakdown? Tokens,
-    decimal? CostUsd);
+    decimal? CostUsd,
+    IReadOnlyList<ContextWindowTurn> ContextWindow);
 
 /// <summary>
 /// Combined total = main session + every successfully-analyzed sub-agent.
@@ -69,5 +78,6 @@ public sealed record CombinedTotals(
 /// </summary>
 public sealed record SessionTrace(
     SessionSummary Session,
+    IReadOnlyList<ContextWindowTurn> ContextWindow,
     IReadOnlyList<SubAgentSpan> SubAgents,
     CombinedTotals Combined);
