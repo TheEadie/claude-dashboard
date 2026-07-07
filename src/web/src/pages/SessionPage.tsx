@@ -11,8 +11,11 @@ import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
+import { LineChart } from '@mui/x-charts/LineChart'
+import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine'
 import { fetchSession } from '../api'
-import type { SessionTrace, TokenBreakdown } from '../types'
+import { windowSizeFor } from '../windowSizes'
+import type { ContextWindowTurn, SessionTrace, TokenBreakdown } from '../types'
 
 type LoadState =
   | { status: 'loading' }
@@ -33,6 +36,7 @@ interface Span {
   unpricedModels: string[]
   tokens: TokenBreakdown | null
   costUsd: number | null
+  contextWindow: ContextWindowTurn[]
 }
 
 const MAIN_SPAN_ID = '__main__'
@@ -66,6 +70,7 @@ function toSpans(trace: SessionTrace): Span[] {
     unpricedModels: trace.session.unpricedModels,
     tokens: trace.session.tokens,
     costUsd: trace.session.costUsd,
+    contextWindow: trace.contextWindow,
   }
 
   const subSpans: Span[] = trace.subAgents.map((s) => ({
@@ -80,6 +85,7 @@ function toSpans(trace: SessionTrace): Span[] {
     unpricedModels: s.unpricedModels,
     tokens: s.tokens,
     costUsd: s.costUsd,
+    contextWindow: s.contextWindow,
   }))
 
   // Sub-agents ordered by start time ascending; undated/failed spans (no
@@ -110,6 +116,41 @@ function ModelChips({ models, unpricedModels }: { models: string[]; unpricedMode
         )
       })}
     </Stack>
+  )
+}
+
+function ContextWindowChart({ turns }: { turns: ContextWindowTurn[] }) {
+  if (turns.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        no context-window data
+      </Typography>
+    )
+  }
+
+  const ceiling = Math.max(...turns.map((t) => windowSizeFor(t.model)))
+  const maxTokens = Math.max(...turns.map((t) => t.tokens))
+
+  return (
+    <LineChart
+      height={300}
+      xAxis={[{ data: turns.map((_, i) => i + 1), label: 'Turn', scaleType: 'point' }]}
+      yAxis={[{ label: 'Tokens', min: 0, max: Math.max(ceiling, maxTokens) }]}
+      series={[
+        {
+          data: turns.map((t) => t.tokens),
+          showMark: true,
+          valueFormatter: (value, { dataIndex }) => {
+            if (value == null) return ''
+            const w = windowSizeFor(turns[dataIndex]?.model ?? null)
+            const pct = ((value / w) * 100).toFixed(1)
+            return `${value.toLocaleString()} tokens (${pct}% of window)`
+          },
+        },
+      ]}
+    >
+      <ChartsReferenceLine y={ceiling} label={`Window ${ceiling.toLocaleString()}`} lineStyle={{ strokeDasharray: '4 4' }} />
+    </LineChart>
   )
 }
 
@@ -176,6 +217,13 @@ function SpanDetails({ span }: { span: Span }) {
             </TableBody>
           </Table>
         </Paper>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" gutterBottom>
+          Context-window usage
+        </Typography>
+        <ContextWindowChart turns={span.contextWindow} />
       </Box>
 
       <Box>

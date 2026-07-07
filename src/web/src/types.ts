@@ -22,6 +22,11 @@ export interface SessionSummary {
   costUsd: number
 }
 
+export interface ContextWindowTurn {
+  tokens: number
+  model: string | null
+}
+
 export interface SubAgentSpan {
   agentId: string
   role: string
@@ -33,6 +38,7 @@ export interface SubAgentSpan {
   unpricedModels: string[]
   tokens: TokenBreakdown | null
   costUsd: number | null
+  contextWindow: ContextWindowTurn[]
 }
 
 export interface CombinedTotals {
@@ -44,6 +50,7 @@ export interface CombinedTotals {
 
 export interface SessionTrace {
   session: SessionSummary
+  contextWindow: ContextWindowTurn[]
   subAgents: SubAgentSpan[]
   combined: CombinedTotals
 }
