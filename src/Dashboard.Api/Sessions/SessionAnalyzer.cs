@@ -52,10 +52,23 @@ internal static class SessionAnalyzer
     {
         var (tokens, models, unpriced, cost) = Aggregate(lines, prices);
         var (startedAt, endedAt, durationMs) = TimeRange(lines);
+        var contextWindow = ContextWindow(lines);
         return new SubAgentSpan(
             agentId, role, false, startedAt, endedAt, durationMs,
-            models, unpriced, tokens, cost);
+            models, unpriced, tokens, cost, contextWindow);
     }
+
+    /// <summary>Main session: sidechain records are excluded (mirrors Analyze).</summary>
+    public static IReadOnlyList<ContextWindowTurn> MainContextWindow(IReadOnlyList<TranscriptLine> lines) =>
+        ContextWindow(lines.Where(l => !l.IsSidechain));
+
+    private static IReadOnlyList<ContextWindowTurn> ContextWindow(IEnumerable<TranscriptLine> lines) =>
+        SelectTurns(lines)
+            .Where(m => m.Usage is not null)
+            .Select(m => new ContextWindowTurn(
+                m.Usage!.InputTokens + m.Usage.CacheReadInputTokens + m.Usage.CacheCreationInputTokens,
+                m.Model))
+            .ToList();
 
     /// <summary>
     /// Combined total = main + every non-failed sub-agent (a failed sub-agent has
@@ -105,23 +118,26 @@ internal static class SessionAnalyzer
         return new CombinedTotals(cost, tokens, models, unpriced);
     }
 
-    private static (TokenBreakdown Tokens, List<string> Models, List<string> Unpriced, decimal CostUsd) Aggregate(
-        IReadOnlyList<TranscriptLine> lines, IPriceTable prices)
-    {
-        // CRITICAL: a single logical assistant turn is emitted as multiple
-        // JSONL lines sharing the same message.id, each repeating an
-        // identical usage block. Group by message.id and keep one usage
-        // block per group, or totals inflate several-fold (verified against
-        // real transcripts — see plan §1.4).
-        var turns = lines
+    /// <summary>
+    /// CRITICAL: a single logical assistant turn is emitted as multiple
+    /// JSONL lines sharing the same message.id, each repeating an identical
+    /// usage block. Group by message.id and keep one usage block per group,
+    /// or totals inflate several-fold (verified against real transcripts —
+    /// see plan §1.4). "&lt;synthetic&gt;" turns are Claude Code placeholders
+    /// with zero usage, not real model turns — exclude them.
+    /// </summary>
+    private static List<AssistantMessage> SelectTurns(IEnumerable<TranscriptLine> lines) =>
+        lines
             .Where(l => l.Type == "assistant" && l.Message is { Id: not null })
             .GroupBy(l => l.Message!.Id)
             .Select(g => g.First().Message!)
-            // "<synthetic>" turns are Claude Code placeholders with zero
-            // usage, not real model turns — exclude them from tokens,
-            // models, and cost.
             .Where(m => m.Model != SyntheticModel)
             .ToList();
+
+    private static (TokenBreakdown Tokens, List<string> Models, List<string> Unpriced, decimal CostUsd) Aggregate(
+        IReadOnlyList<TranscriptLine> lines, IPriceTable prices)
+    {
+        var turns = SelectTurns(lines);
 
         long input = 0, output = 0, cacheWrite = 0, cacheRead = 0;
         var models = new List<string>();

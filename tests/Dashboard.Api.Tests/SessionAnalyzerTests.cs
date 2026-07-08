@@ -157,11 +157,11 @@ public class SessionAnalyzerTests
         var sub1 = new SubAgentSpan(
             "agent-1", "code-reviewer", false,
             DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), 0,
-            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m);
+            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m, []);
         var sub2 = new SubAgentSpan(
             "agent-2", "agent-2", false,
             DateTimeOffset.Parse("2026-07-01T09:02:00.000Z"), DateTimeOffset.Parse("2026-07-01T09:02:00.000Z"), 0,
-            ["claude-sonnet-4-6"], [], new TokenBreakdown(200, 100, 0, 0, 300), 0.0021m);
+            ["claude-sonnet-4-6"], [], new TokenBreakdown(200, 100, 0, 0, 300), 0.0021m, []);
 
         var combined = SessionAnalyzer.Combine(main, [sub1, sub2]);
 
@@ -175,7 +175,7 @@ public class SessionAnalyzerTests
     public void Combine_FailedSubAgentWithNullTokens_ContributesNothing()
     {
         var main = SessionAnalyzer.Analyze("main", ParseFixture("valid-single-model.jsonl"), new PriceTable());
-        var failed = new SubAgentSpan("agent-1", "agent-1", true, null, null, 0, [], [], null, null);
+        var failed = new SubAgentSpan("agent-1", "agent-1", true, null, null, 0, [], [], null, null, []);
 
         var combined = SessionAnalyzer.Combine(main, [failed]);
 
@@ -189,11 +189,67 @@ public class SessionAnalyzerTests
         var main = SessionAnalyzer.Analyze("main", ParseFixture("valid-single-model.jsonl"), new PriceTable());
         var undated = new SubAgentSpan(
             "agent-1", "agent-1", false, null, null, 0,
-            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m);
+            ["claude-opus-4-8"], [], new TokenBreakdown(100, 50, 0, 0, 150), 0.00175m, []);
 
         var combined = SessionAnalyzer.Combine(main, [undated]);
 
         Assert.Equal(main.Tokens.Total + 150, combined.Tokens.Total);
         Assert.Equal(main.CostUsd + 0.00175m, combined.CostUsd);
+    }
+
+    [Fact]
+    public void MainContextWindow_ValidSession_ReturnsOrderedPerTurnTokens()
+    {
+        var lines = ParseFixture("valid-single-model.jsonl");
+
+        var contextWindow = SessionAnalyzer.MainContextWindow(lines);
+
+        Assert.Equal(3, contextWindow.Count);
+        Assert.Equal([1500, 2100, 500], contextWindow.Select(t => t.Tokens).ToList());
+        Assert.All(contextWindow, t => Assert.Equal("claude-opus-4-8", t.Model));
+    }
+
+    [Fact]
+    public void MainContextWindow_ExcludesSyntheticAndSidechain()
+    {
+        var lines = ParseFixture("synthetic-and-sidechain.jsonl");
+
+        var contextWindow = SessionAnalyzer.MainContextWindow(lines);
+
+        var turn = Assert.Single(contextWindow);
+        Assert.Equal(1000, turn.Tokens);
+        Assert.Equal("claude-opus-4-8", turn.Model);
+    }
+
+    [Fact]
+    public void MainContextWindow_MultiModel_CarriesPerTurnModel()
+    {
+        var lines = ParseFixture("multi-model.jsonl");
+
+        var contextWindow = SessionAnalyzer.MainContextWindow(lines);
+
+        Assert.Equal([1000, 2150, 300], contextWindow.Select(t => t.Tokens).ToList());
+        Assert.Equal(
+            ["claude-opus-4-8", "claude-sonnet-4-6", "claude-opus-4-8"],
+            contextWindow.Select(t => t.Model).ToList());
+    }
+
+    [Fact]
+    public void AnalyzeSubAgent_PopulatesContextWindow()
+    {
+        var lines = new List<TranscriptLine>
+        {
+            new("assistant", "/home/user/code/sample-project", "agent-1",
+                DateTimeOffset.Parse("2026-06-26T15:01:00.000Z"), true, null,
+                new AssistantMessage("a1_0001", "claude-opus-4-8",
+                    new Usage(100, 50, 0, 0))),
+        };
+        var prices = new PriceTable();
+
+        var span = SessionAnalyzer.AnalyzeSubAgent("agent-1", "code-reviewer", lines, prices);
+
+        var turn = Assert.Single(span.ContextWindow);
+        Assert.Equal(100, turn.Tokens);
+        Assert.Equal("claude-opus-4-8", turn.Model);
     }
 }

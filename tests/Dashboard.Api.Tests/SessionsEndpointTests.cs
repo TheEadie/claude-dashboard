@@ -114,6 +114,33 @@ public class SessionsEndpointTests : IClassFixture<WebApplicationFactory<Program
     }
 
     [Fact]
+    public async Task GetSession_ExposesContextWindowForMainSession()
+    {
+        var response = await _client.GetAsync("/api/sessions/valid-single-model");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var contextWindow = body.GetProperty("contextWindow").EnumerateArray().ToList();
+        Assert.Equal(3, contextWindow.Count);
+        Assert.Equal(1500, contextWindow[0].GetProperty("tokens").GetInt64());
+        Assert.Equal("claude-opus-4-8", contextWindow[0].GetProperty("model").GetString());
+    }
+
+    [Fact]
+    public async Task GetSession_ExposesContextWindowForSubAgent()
+    {
+        var response = await _client.GetAsync("/api/sessions/sub-parent");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var agent1 = body.GetProperty("subAgents").EnumerateArray()
+            .Single(s => s.GetProperty("agentId").GetString() == "agent-1");
+        var contextWindow = agent1.GetProperty("contextWindow").EnumerateArray().ToList();
+        Assert.Single(contextWindow);
+        Assert.Equal(100, contextWindow[0].GetProperty("tokens").GetInt64());
+    }
+
+    [Fact]
     public async Task GetSession_UnknownId_Returns404WithError()
     {
         var response = await _client.GetAsync("/api/sessions/no-such-session");

@@ -21,9 +21,10 @@ internal sealed class SessionService(
         {
             var lines = parser.Parse(path);
             var main = SessionAnalyzer.Analyze(sessionId, lines, prices);
+            var contextWindow = SessionAnalyzer.MainContextWindow(lines);
             var subs = AnalyzeSubAgents(path);
             var combined = SessionAnalyzer.Combine(main, subs);
-            return new SessionTrace(main, subs, combined);
+            return new SessionTrace(main, contextWindow, subs, combined);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -97,7 +98,8 @@ internal sealed class SessionService(
             {
                 spans.Add(new SubAgentSpan(
                     d.AgentId, role, true, null, null, 0,
-                    Array.Empty<string>(), Array.Empty<string>(), null, null));
+                    Array.Empty<string>(), Array.Empty<string>(), null, null,
+                    Array.Empty<ContextWindowTurn>()));
             }
         }
 
